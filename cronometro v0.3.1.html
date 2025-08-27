@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronômetro Flashpoint 3.1 </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'light-bg': '#f4f6f9',
+                        'light-text': '#2c3e50',
+                        'light-accent': '#3498db',
+                        'dark-bg': '#121721',
+                        'dark-text': '#e6e6e6',
+                        'dark-accent': '#4ecdc4'
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-300">
+    <div class="w-full max-w-md relative p-6">
+       
+
+        <!-- Seletor de tempo -->
+        <div class="mb-5 flex items-center justify-center space-x-2">
+            <button id="decreaseTimeBtn" class="text-light-accent dark:text-dark-accent text-xl font-bold focus:outline-none hover:scale-105 active:scale-95">▼</button>
+            <div id="timeLimitDisplay" class="text-lg font-bold w-16 text-center bg-white dark:bg-[#2c3e50] rounded-md py-1 select-none">3 min</div>
+            <button id="increaseTimeBtn" class="text-light-accent dark:text-dark-accent text-xl font-bold focus:outline-none hover:scale-105 active:scale-95">▲</button>
+        </div>
+<div class="flex items-center justify-center gap-4 mb-5">
+  <!-- Seletor de Time -->
+  <div class="flex items-center gap-2">
+    <label class="font-semibold">Time:</label>
+    <select id="teamSelect" class="w-32 bg-white dark:bg-[#2c3e50] text-light-text dark:text-dark-text rounded-lg px-3 py-2 border-2 border-light-accent dark:border-dark-accent focus:outline-none font-semibold"></select>
+  </div>
+
+  <!-- Seletor de Pessoa -->
+  <select id="personSelect" class="w-32 bg-white dark:bg-[#2c3e50] text-light-text dark:text-dark-text rounded-lg px-3 py-2 border-2 border-light-accent dark:border-dark-accent focus:outline-none text-center font-semibold"></select>
+
+  <!-- Botão -->
+  <button id="manageBtn" class="w-12 h-10 flex items-center justify-center bg-light-accent dark:bg-dark-accent text-white rounded-lg hover:scale-105 active:scale-95 transition-all duration-300 font-semibold">☰</button>
+</div>
+
+        <!-- Botão tema -->
+        <button id="themeToggle" class="fixed top-4 right-4 text-2xl bg-transparent border-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-300">◑</button>
+
+        <!-- Notificação -->
+        <div id="copyNotification" class="fixed top-4 left-4 bg-light-accent dark:bg-dark-accent text-white px-4 py-2 rounded-lg shadow-lg hidden items-center">✓ Ação concluída!</div>
+
+        <!-- Círculo de progresso -->
+        <svg class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -z-10 w-[calc(100%+16rem)] h-[calc(100%+16rem)]" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48" fill="none" stroke-width="4" class="stroke-light-accent/30 dark:stroke-dark-accent/30 opacity-30" />
+            <circle id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke-width="2" stroke-linecap="round" class="stroke-light-accent dark:stroke-dark-accent origin-center rotate-[-90deg]" stroke-dasharray="302" stroke-dashoffset="302" />
+        </svg>
+
+        <div class="bg-white dark:bg-[#1e2433] shadow-xl rounded-2xl p-9 text-center relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10 bg-gradient-to-br from-light-accent to-light-bg dark:from-dark-accent dark:to-dark-bg"></div>
+
+            <div id="timer" class="text-6xl font-family mb-4 tracking-wide text-light-text dark:text-dark-text">00:00.00</div>
+            <div id="excessDisplay" class="text-red-500 text-lg mb-4 hidden">Tempo excedido: +0s</div>
+
+            <div class="flex justify-center space-x-4 mt-6 relative z-10">
+                <button id="startBtn" class="p-3 rounded-full bg-light-accent dark:bg-dark-accent text-white transition-all duration-300 hover:scale-105 active:scale-95 w-16 h-16 flex items-center justify-center shadow-md hover:shadow-lg">⏯︎</button>
+                <button id="pauseBtn" class="p-3 rounded-full bg-yellow-500 text-white transition-all duration-300 hover:scale-105 active:scale-95 w-16 h-16 flex items-center justify-center shadow-md hover:shadow-lg">⏸︎</button>
+                <button id="resetBtn" class="p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-light-text dark:text-dark-text transition-all duration-300 hover:scale-105 active:scale-95 w-16 h-16 flex items-center justify-center shadow-md hover:shadow-lg">↩︎</button>
+                <button id="saveBtn" class="p-3 rounded-full bg-green-500 text-white transition-all duration-300 hover:scale-105 active:scale-95 w-16 h-16 flex items-center justify-center shadow-md hover:shadow-lg hidden">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Gerenciamento -->
+    <div id="manageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-[#1e2433] rounded-2xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-light-text dark:text-dark-text">Gerenciar Sistema</h2>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">×</button>
+            </div>
+
+            <!-- Abas -->
+            <div class="flex mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                <button id="teamsTab" class="flex-1 py-2 px-4 rounded-md bg-light-accent dark:bg-dark-accent text-white font-semibold">Times</button>
+                <button id="peopleTab" class="flex-1 py-2 px-4 rounded-md text-gray-600 dark:text-gray-400 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700">Pessoas</button>
+                <button id="recordsTab" class="flex-1 py-2 px-4 rounded-md text-gray-600 dark:text-gray-400 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700">Histórico</button>
+                <button id="generalTab" class="flex-1 py-2 px-4 rounded-md text-gray-600 dark:text-gray-400 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700">Geral</button>
+            </div>
+
+            <!-- Aba Times -->
+            <div id="teamsContent" class="space-y-4"></div>
+
+            <!-- Aba Pessoas -->
+            <div id="peopleContent" class="hidden space-y-4">
+                <div class="flex gap-2 mb-2">
+                    <input id="newPersonInput" type="text" placeholder="Nome da nova pessoa" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-light-text dark:text-dark-text">
+                    <button id="addPersonBtn" class="bg-light-accent dark:bg-dark-accent text-white px-4 py-2 rounded-lg hover:scale-105 font-semibold">Adicionar</button>
+                </div>
+                <div id="peopleList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="font-semibold mb-2">Controle de Dados do Time</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="exportTeamBtn" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold hover:scale-105">Exportar CSV (Time)</button>
+                        <button id="copyTeamExcelBtn" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-semibold hover:scale-105">Copiar p/ Excel (Time)</button>
+                        <button id="clearTeamBtn" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-semibold hover:scale-105">Limpar Registros do Time</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Histórico (apenas do time atual) -->
+            <div id="recordsContent" class="hidden">
+                <div class="mb-4 flex justify-between items-center">
+                    <span id="recordCount" class="text-sm text-gray-600 dark:text-gray-400">0 registros</span>
+                    <div class="flex gap-2">
+                        <button id="copyExcelBtn" class="bg-blue-500 text-white px-3 py-1 rounded text-sm font-semibold hover:scale-105">Copiar p/ Excel</button>
+                        <button id="exportBtn" class="bg-green-500 text-white px-3 py-1 rounded text-sm font-semibold hover:scale-105">Exportar CSV</button>
+                    </div>
+                </div>
+                <div id="recordsList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+
+            <!-- Aba Geral (consolida tudo) -->
+            <div id="generalContent" class="hidden space-y-4">
+                <div id="generalStats" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="copyAllExcelBtn" class="flex-1 bg-blue-600 text-white px-3 py-2 rounded font-semibold hover:scale-105">Copiar p/ Excel (Todos)</button>
+                    <button id="exportAllBtn" class="flex-1 bg-green-600 text-white px-3 py-2 rounded font-semibold hover:scale-105">Exportar CSV (Todos)</button>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Registros mais recentes (todos os times)</h3>
+                    <div id="generalRecent" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="fixed bottom-0 left-0 w-full p-4 text-center bg-light-bg/70 dark:bg-dark-bg/70 text-light-text dark:text-dark-text text-sm">
+        <div class="container mx-auto">
+            <p>Chassis Electronics Modules South America</p>
+        </div>
+    </footer>
+
+    <script>
+        // =====================
+        // Estado & Persistência
+        // =====================
+        const STORAGE_KEY = 'flashpoint_v4_data';
+
+        let data = {
+            teams: {
+                BSM: { people: ['Lucas','Olavo','Pedrão','Letícia','João','Luiz','Gabriel','Matheus D','Lygia'], records: [] },
+                EPS: { people: ['Adriano','Julia','Leonardo','Victor','João Pedro'], records: [] },
+                Validation: { people: ['Carlos','Francisco','Wernek','Pedro','Grein'], records: [] }
+            },
+            currentTeam: 'BSM',
+            currentPerson: 'João',
+            CURRENT_TIME_LIMIT: 3,
+            isDarkMode: false
+        };
+
+        function saveData(){
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+        function loadData(){
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if(saved){
+                try{
+                    const parsed = JSON.parse(saved);
+                    // merge básico para garantir chaves
+                    data = Object.assign({}, data, parsed);
+                    // garante times padrão
+                    ['BSM','EPS','Validation'].forEach(t=>{
+                        if(!data.teams[t]) data.teams[t] = {people:[], records:[]};
+                        if(!Array.isArray(data.teams[t].people)) data.teams[t].people = [];
+                        if(!Array.isArray(data.teams[t].records)) data.teams[t].records = [];
+                    });
+                }catch(e){ console.warn('Falha ao carregar storage', e); }
+            }
+        }
+
+        // ==============
+        // Variáveis UI
+        // ==============
+        let startTime; let elapsedTime = 0; let timerInterval; let isRunning = false;
+        let TIME_LIMIT = 180000; // ms
+
+        const timerEl = document.getElementById('timer');
+        const progressCircle = document.getElementById('progressCircle');
+        const excessDisplayEl = document.getElementById('excessDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const timeLimitDisplay = document.getElementById('timeLimitDisplay');
+        const decreaseTimeBtn = document.getElementById('decreaseTimeBtn');
+        const increaseTimeBtn = document.getElementById('increaseTimeBtn');
+        const personSelect = document.getElementById('personSelect');
+        const teamSelect = document.getElementById('teamSelect');
+        const manageBtn = document.getElementById('manageBtn');
+        const manageModal = document.getElementById('manageModal');
+        const closeModal = document.getElementById('closeModal');
+        const copyNotification = document.getElementById('copyNotification');
+
+        // Abas
+        const teamsTab = document.getElementById('teamsTab');
+        const peopleTab = document.getElementById('peopleTab');
+        const recordsTab = document.getElementById('recordsTab');
+        const generalTab = document.getElementById('generalTab');
+        const teamsContent = document.getElementById('teamsContent');
+        const peopleContent = document.getElementById('peopleContent');
+        const recordsContent = document.getElementById('recordsContent');
+        const generalContent = document.getElementById('generalContent');
+        const recordCount = document.getElementById('recordCount');
+        const recordsList = document.getElementById('recordsList');
+
+        // ==================
+        // Funções Utilitárias
+        // ==================
+        function showToast(msg){
+            copyNotification.textContent = msg;
+            copyNotification.classList.remove('hidden');
+            setTimeout(()=>copyNotification.classList.add('hidden'), 2000);
+        }
+
+        function updateTimeLimit(newLimit){
+            data.CURRENT_TIME_LIMIT = newLimit;
+            TIME_LIMIT = newLimit * 60000;
+            timeLimitDisplay.textContent = `${newLimit} min`;
+            resetTimer();
+            saveData();
+        }
+
+        function formatTime(ms){
+            const totalSeconds = Math.floor(ms/1000);
+            const minutes = Math.floor(totalSeconds/60).toString().padStart(2,'0');
+            const seconds = (totalSeconds%60).toString().padStart(2,'0');
+            const milliseconds = Math.floor((ms%1000)/10).toString().padStart(2,'0');
+            return `${minutes}:${seconds}.${milliseconds}`;
+        }
+        function formatTimeSimple(ms){
+            const totalSeconds = Math.floor(ms/1000);
+            const minutes = Math.floor(totalSeconds/60);
+            const seconds = totalSeconds%60;
+            return `${minutes}:${seconds.toString().padStart(2,'0')}`;
+        }
+
+        function updateTeamSelect(){
+            teamSelect.innerHTML = '';
+            Object.keys(data.teams).forEach(team =>{
+                const opt = document.createElement('option');
+                opt.value = team; opt.textContent = team;
+                if(team === data.currentTeam) opt.selected = true;
+                teamSelect.appendChild(opt);
+            });
+        }
+        function updatePersonSelect(){
+            const people = data.teams[data.currentTeam].people;
+            if(people.length === 0){
+                // garante 1 nome default pra parar de dar problema
+                people.push('Pessoa 1');
+            }
+            personSelect.innerHTML = '';
+            people.forEach(p=>{
+                const opt = document.createElement('option');
+                opt.value = p; opt.textContent = p; opt.selected = (p===data.currentPerson);
+                personSelect.appendChild(opt);
+            });
+        }
+
+        // =====================
+        // Timer
+        // =====================
+        function updateTimer(){
+            const currentTime = Date.now();
+            elapsedTime = currentTime - startTime;
+            timerEl.textContent = formatTime(elapsedTime);
+
+            const progress = Math.min((elapsedTime / TIME_LIMIT) * 100, 100);
+            const dashOffset = 302 - (progress / 100) * 302;
+            progressCircle.setAttribute('stroke-dashoffset', dashOffset);
+
+            if (elapsedTime >= TIME_LIMIT) {
+                const excessTime = Math.floor((elapsedTime - TIME_LIMIT) / 1000);
+                excessDisplayEl.textContent = `Tempo excedido: +${excessTime}s`;
+                excessDisplayEl.classList.remove('hidden');
+                timerEl.classList.remove('text-light-text','dark:text-dark-text');
+                timerEl.classList.add('text-red-500');
+                progressCircle.classList.remove('stroke-light-accent','dark:stroke-dark-accent');
+                progressCircle.classList.add('stroke-red-500');
+            }
+        }
+        function startTimer(){
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(updateTimer, 10);
+                startBtn.disabled = true; startBtn.classList.add('opacity-50','cursor-not-allowed');
+                pauseBtn.disabled = false; pauseBtn.classList.remove('opacity-50','cursor-not-allowed');
+                personSelect.disabled = true; personSelect.classList.add('opacity-50');
+                teamSelect.disabled = true; teamSelect.classList.add('opacity-50');
+            }
+        }
+        function pauseTimer(){
+            if (isRunning) {
+                isRunning = false; clearInterval(timerInterval);
+                pauseBtn.disabled = true; pauseBtn.classList.add('opacity-50','cursor-not-allowed');
+                startBtn.disabled = false; startBtn.classList.remove('opacity-50','cursor-not-allowed');
+                if (elapsedTime > 0) { saveBtn.classList.remove('hidden'); }
+            }
+        }
+        function resetTimer(){
+            clearInterval(timerInterval); isRunning = false; elapsedTime = 0;
+            timerEl.textContent = '00:00.00';
+            excessDisplayEl.classList.add('hidden');
+            progressCircle.setAttribute('stroke-dashoffset','302');
+            timerEl.classList.remove('text-red-500');
+            timerEl.classList.add('text-light-text','dark:text-dark-text');
+            progressCircle.classList.remove('stroke-red-500');
+            progressCircle.classList.add('stroke-light-accent','dark:stroke-dark-accent');
+            startBtn.disabled = false; startBtn.classList.remove('opacity-50','cursor-not-allowed');
+            pauseBtn.disabled = true; pauseBtn.classList.add('opacity-50','cursor-not-allowed');
+            personSelect.disabled = false; personSelect.classList.remove('opacity-50');
+            teamSelect.disabled = false; teamSelect.classList.remove('opacity-50');
+            saveBtn.classList.add('hidden');
+        }
+        function saveRecord(){
+            if(elapsedTime<=0) return;
+            const excessMs = Math.max(0, elapsedTime - (data.CURRENT_TIME_LIMIT*60000));
+            const now = new Date();
+            const record = {
+                id: Date.now(),
+                ts: Date.now(),
+                date: now.toLocaleDateString('pt-BR'),
+                time: now.toLocaleTimeString('pt-BR'),
+                team: data.currentTeam,
+                person: data.currentPerson,
+                setTime: formatTimeSimple(data.CURRENT_TIME_LIMIT*60000),
+                actualTime: formatTimeSimple(elapsedTime),
+                excess: Math.floor(excessMs/1000),
+                excessFormatted: formatTimeSimple(excessMs)
+            };
+            data.teams[data.currentTeam].records.push(record);
+            saveData();
+            updateRecordsDisplay();
+            updatePeopleDisplay();
+            resetTimer();
+            showToast(`✓ Registro salvo para ${record.person} (${record.team})`);
+        }
+
+        // =====================
+        // Pessoas (por time)
+        // =====================
+        function updatePeopleDisplay(){
+            const container = document.getElementById('peopleList');
+            if(!container) return;
+            container.innerHTML = '';
+            const people = data.teams[data.currentTeam].people;
+            const records = data.teams[data.currentTeam].records;
+
+            people.forEach(person=>{
+                const prs = records.filter(r=>r.person===person);
+                const totalExcess = prs.reduce((acc,r)=>acc + (r.excess||0), 0);
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-semibold">${person}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Falas: ${prs.length} | Excesso: ${Math.floor(totalExcess)}s</div>
+                    </div>
+                    ${people.length>1 ? `<button data-person="${person}" class="remove-person bg-red-500 text-white px-3 py-1 rounded text-sm hover:scale-105">Remover</button>`: ''}
+                `;
+                container.appendChild(div);
+            });
+
+            // bind remover
+            container.querySelectorAll('.remove-person').forEach(btn=>{
+                btn.addEventListener('click', (e)=>{
+                    const person = e.currentTarget.getAttribute('data-person');
+                    removePerson(person);
+                });
+            });
+        }
+        function addPerson(){
+            const input = document.getElementById('newPersonInput');
+            const name = (input.value||'').trim();
+            if(!name) return;
+            const arr = data.teams[data.currentTeam].people;
+            if(!arr.includes(name)){
+                arr.push(name);
+                data.currentPerson = name;
+                updatePersonSelect();
+                updatePeopleDisplay();
+                saveData();
+            }
+            input.value='';
+        }
+        function removePerson(person){
+            const arr = data.teams[data.currentTeam].people;
+            if(arr.length<=1){ showToast('Mantenha pelo menos 1 pessoa no time.'); return; }
+            if(confirm(`Remover ${person} do time ${data.currentTeam}?`)){
+                const idx = arr.indexOf(person);
+                if(idx>-1) arr.splice(idx,1);
+                if(data.currentPerson===person){ data.currentPerson = arr[0]; }
+                updatePersonSelect();
+                updatePeopleDisplay();
+                saveData();
+            }
+        }
+
+        // =====================
+        // Registros (por time)
+        // =====================
+        function updateRecordsDisplay(){
+            const recs = data.teams[data.currentTeam].records;
+            if(recordCount) recordCount.textContent = `${recs.length} registros`;
+            if(!recordsList) return;
+            if(recs.length===0){
+                recordsList.innerHTML = '<div class="text-center text-gray-500 py-8">Nenhum registro ainda</div>';
+                return;
+            }
+            recordsList.innerHTML = '';
+            const recent = recs.slice(-50).sort((a,b)=>b.ts-a.ts);
+            recent.forEach(r=>{
+                const div = document.createElement('div');
+                div.className = `${r.excess>0 ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500' : 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'} p-3 rounded-lg`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-semibold">${r.person} — <span class="text-xs opacity-70">${r.team}</span></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${r.date} ${r.time}</div>
+                            <div class="text-sm">Definido: ${r.setTime} | Real: ${r.actualTime}</div>
+                            ${r.excess>0 ? `<div class="text-sm text-red-600 dark:text-red-400">Excesso: ${r.excessFormatted}</div>`:''}
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 text-sm" data-del="${r.id}">🗑️</button>
+                    </div>`;
+                recordsList.appendChild(div);
+            });
+            // bind delete
+            recordsList.querySelectorAll('[data-del]').forEach(btn=>{
+                btn.addEventListener('click', (e)=>{
+                    const id = Number(e.currentTarget.getAttribute('data-del'));
+                    deleteRecord(id);
+                });
+            });
+        }
+        function deleteRecord(id){
+            if(!confirm('Excluir este registro?')) return;
+            const recs = data.teams[data.currentTeam].records;
+            const idx = recs.findIndex(r=>r.id===id);
+            if(idx>-1){ recs.splice(idx,1); saveData(); updateRecordsDisplay(); updatePeopleDisplay(); }
+        }
+
+        // =====================
+        // Exportações
+        // =====================
+        function buildCSVFromRecords(recs){
+            const headers = ['Data','Hora','Time','Pessoa','Tempo Definido','Tempo Real','Excesso (seg)','Excesso (formatado)'];
+            const rows = recs.map(r=>[r.date,r.time,r.team,r.person,r.setTime,r.actualTime,r.excess,r.excessFormatted].join(','));
+            return [headers.join(','), ...rows].join('\n');
+        }
+        function downloadCSV(filename, content){
+            const blob = new Blob([content], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        function copyTSVToClipboard(recs){
+            const headers = ['Data','Hora','Time','Pessoa','Tempo Definido','Tempo Real','Excesso (seg)','Excesso (formatado)'];
+            const dataStr = [headers.join('\t'), ...recs.map(r=>[r.date,r.time,r.team,r.person,r.setTime,r.actualTime,r.excess,r.excessFormatted].join('\t'))].join('\n');
+            navigator.clipboard.writeText(dataStr).then(()=>{ showToast('✓ Dados copiados para Excel!'); });
+        }
+
+        function exportTeamCSV(){
+            const recs = data.teams[data.currentTeam].records;
+            if(recs.length===0) return;
+            const csv = buildCSVFromRecords(recs);
+            downloadCSV(`cronometro_${data.currentTeam}_${new Date().toISOString().split('T')[0]}.csv`, csv);
+        }
+        function copyTeamExcel(){
+            const recs = data.teams[data.currentTeam].records;
+            if(recs.length===0) return;
+            copyTSVToClipboard(recs);
+        }
+        function clearTeamRecords(){
+            if(!confirm(`Excluir TODOS os registros do time ${data.currentTeam}?`)) return;
+            data.teams[data.currentTeam].records = [];
+            saveData(); updateRecordsDisplay(); updatePeopleDisplay();
+        }
+
+        function exportCurrentCSV(){ exportTeamCSV(); }
+        function copyCurrentExcel(){ copyTeamExcel(); }
+
+        function getAllRecords(){
+            return Object.entries(data.teams).flatMap(([team, obj]) => (obj.records||[]));
+        }
+        function exportAllCSV(){
+            const recs = getAllRecords(); if(recs.length===0) return;
+            const csv = buildCSVFromRecords(recs);
+            downloadCSV(`cronometro_todos_${new Date().toISOString().split('T')[0]}.csv`, csv);
+        }
+        function copyAllExcel(){
+            const recs = getAllRecords(); if(recs.length===0) return;
+            copyTSVToClipboard(recs);
+        }
+
+        // =====================
+        // Abas (render)
+        // =====================
+        function switchTab(tab){
+            const setActive = (btn, active) => {
+                btn.className = `flex-1 py-2 px-4 rounded-md ${active? 'bg-light-accent dark:bg-dark-accent text-white font-semibold':'text-gray-600 dark:text-gray-400 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700'}`;
+            };
+            setActive(teamsTab, tab==='teams');
+            setActive(peopleTab, tab==='people');
+            setActive(recordsTab, tab==='records');
+            setActive(generalTab, tab==='general');
+            teamsContent.classList.toggle('hidden', tab!=='teams');
+            peopleContent.classList.toggle('hidden', tab!=='people');
+            recordsContent.classList.toggle('hidden', tab!=='records');
+            generalContent.classList.toggle('hidden', tab!=='general');
+
+            if(tab==='teams') renderTeamsStats();
+            if(tab==='people') { updatePeopleDisplay(); bindPeopleTabButtons(); }
+            if(tab==='records') updateRecordsDisplay();
+            if(tab==='general') renderGeneralView();
+        }
+
+        function renderTeamsStats(){
+            teamsContent.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'grid sm:grid-cols-2 lg:grid-cols-3 gap-3';
+
+            Object.entries(data.teams).forEach(([team, obj])=>{
+                const recs = obj.records||[];
+                const talks = recs.length;
+                const totalExcess = recs.reduce((a,r)=>a+(r.excess||0),0);
+                const avgExcess = talks? Math.round(totalExcess/talks) : 0;
+                const avgTimeSec = talks? Math.round(recs.reduce((a,r)=>{
+                    const [m,s] = r.actualTime.split(':').map(Number); return a + (m*60+s);
+                },0)/talks) : 0;
+                const avgTimeStr = `${Math.floor(avgTimeSec/60)}:${String(avgTimeSec%60).padStart(2,'0')}`;
+
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-xl bg-gray-50 dark:bg-gray-800 shadow';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-lg">${team}</h3>
+                        <span class="text-xs opacity-70">${obj.people.length} pessoas</span>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <div class="p-2 rounded bg-white/70 dark:bg-black/20"><div class="text-xs opacity-70">Falas</div><div class="text-xl font-bold">${talks}</div></div>
+                        <div class="p-2 rounded bg-white/70 dark:bg.black/20"><div class="text-xs opacity-70">Excesso total</div><div class="text-xl font-bold">${totalExcess}s</div></div>
+                        <div class="p-2 rounded bg-white/70 dark:bg-black/20"><div class="text-xs opacity-70">Excesso médio</div><div class="text-xl font-bold">${avgExcess}s</div></div>
+                        <div class="p-2 rounded bg-white/70 dark:bg-black/20"><div class="text-xs opacity-70">Tempo médio</div><div class="text-xl font-bold">${avgTimeStr}</div></div>
+                    </div>`;
+                grid.appendChild(card);
+            });
+            teamsContent.appendChild(grid);
+        }
+
+        function bindPeopleTabButtons(){
+            const exportTeamBtn = document.getElementById('exportTeamBtn');
+            const copyTeamExcelBtn = document.getElementById('copyTeamExcelBtn');
+            const clearTeamBtn = document.getElementById('clearTeamBtn');
+            exportTeamBtn.onclick = exportTeamCSV;
+            copyTeamExcelBtn.onclick = copyTeamExcel;
+            clearTeamBtn.onclick = clearTeamRecords;
+        }
+
+        function renderGeneralView(){
+            const statsBox = document.getElementById('generalStats');
+            const recentBox = document.getElementById('generalRecent');
+            statsBox.innerHTML = '';
+            recentBox.innerHTML = '';
+
+            // Stats agregadas por time
+            Object.entries(data.teams).forEach(([team,obj])=>{
+                const recs = obj.records||[];
+                const talks = recs.length;
+                const totalExcess = recs.reduce((a,r)=>a+(r.excess||0),0);
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-xl bg-gray-50 dark:bg-gray-800 shadow';
+                card.innerHTML = `
+                    <div class="font-bold">${team}</div>
+                    <div class="text-sm">Falas: <b>${talks}</b></div>
+                    <div class="text-sm">Excesso total: <b>${totalExcess}s</b></div>`;
+                statsBox.appendChild(card);
+            });
+
+            // Lista unificada dos mais recentes
+            const all = getAllRecords().slice().sort((a,b)=>b.ts-a.ts).slice(0,50);
+            if(all.length===0){
+                recentBox.innerHTML = '<div class="text-center text-gray-500 py-8">Nenhum registro ainda</div>';
+                return;
+            }
+            all.forEach(r=>{
+                const div = document.createElement('div');
+                div.className = `${r.excess>0 ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500' : 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'} p-3 rounded-lg`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-semibold">${r.person} — <span class="text-xs opacity-70">${r.team}</span></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${r.date} ${r.time}</div>
+                            <div class="text-sm">Definido: ${r.setTime} | Real: ${r.actualTime}</div>
+                            ${r.excess>0 ? `<div class="text-sm text-red-600 dark:text-red-400">Excesso: ${r.excessFormatted}</div>`:''}
+                        </div>
+                    </div>`;
+                recentBox.appendChild(div);
+            });
+
+            // botões
+            document.getElementById('copyAllExcelBtn').onclick = copyAllExcel;
+            document.getElementById('exportAllBtn').onclick = exportAllCSV;
+        }
+
+        // =====================
+        // Tema
+        // =====================
+        function applyTheme(){
+            if(data.isDarkMode){ document.documentElement.classList.add('dark'); themeToggleBtn.textContent='◐'; }
+            else { document.documentElement.classList.remove('dark'); themeToggleBtn.textContent='◑'; }
+        }
+        function toggleTheme(){ data.isDarkMode = !data.isDarkMode; applyTheme(); saveData(); }
+
+        // =====================
+        // Modal
+        // =====================
+        function openModal(){
+            manageModal.classList.remove('hidden'); manageModal.classList.add('flex');
+            switchTab('teams');
+        }
+        function closeModalFn(){ manageModal.classList.add('hidden'); manageModal.classList.remove('flex'); }
+
+        // =====================
+        // Listeners
+        // =====================
+        decreaseTimeBtn.addEventListener('click', ()=>{ if(data.CURRENT_TIME_LIMIT>1) updateTimeLimit(data.CURRENT_TIME_LIMIT-1); });
+        increaseTimeBtn.addEventListener('click', ()=>{ if(data.CURRENT_TIME_LIMIT<60) updateTimeLimit(data.CURRENT_TIME_LIMIT+1); });
+        personSelect.addEventListener('change', (e)=>{ data.currentPerson = e.target.value; saveData(); });
+        teamSelect.addEventListener('change', (e)=>{ data.currentTeam = e.target.value; const ppl = data.teams[data.currentTeam].people; if(!ppl.includes(data.currentPerson)) data.currentPerson = ppl[0] || ''; updatePersonSelect(); saveData(); updateRecordsDisplay(); });
+
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        saveBtn.addEventListener('click', saveRecord);
+        themeToggleBtn.addEventListener('click', toggleTheme);
+        manageBtn.addEventListener('click', openModal);
+        closeModal.addEventListener('click', closeModalFn);
+
+        teamsTab.addEventListener('click', ()=>switchTab('teams'));
+        peopleTab.addEventListener('click', ()=>switchTab('people'));
+        recordsTab.addEventListener('click', ()=>switchTab('records'));
+        generalTab.addEventListener('click', ()=>switchTab('general'));
+        document.addEventListener('click', (e)=>{
+            if(e.target===manageModal){ closeModalFn(); }
+        });
+
+        document.addEventListener('click', (e)=>{
+            if(e.target && e.target.id==='addPersonBtn') addPerson();
+            if(e.target && e.target.id==='exportBtn') exportCurrentCSV();
+            if(e.target && e.target.id==='copyExcelBtn') copyCurrentExcel();
+        });
+
+        // =====================
+        // Inicialização
+        // =====================
+        loadData();
+        TIME_LIMIT = data.CURRENT_TIME_LIMIT * 60000;
+        timeLimitDisplay.textContent = `${data.CURRENT_TIME_LIMIT} min`;
+        updateTeamSelect();
+        updatePersonSelect();
+        applyTheme();
+        pauseBtn.disabled = true; pauseBtn.classList.add('opacity-50','cursor-not-allowed');
+    </script>
+</body>
+</html>
